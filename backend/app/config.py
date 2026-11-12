@@ -76,24 +76,29 @@ class Settings:
             o.strip() for o in origins_raw.split(",") if o.strip()
         ]
 
-        # Database SQLite
-        db_url_env = os.getenv("DATABASE_URL", "")
-        if db_url_env and db_url_env.startswith("sqlite:///"):
-            rel_part = db_url_env.replace("sqlite:///", "")
-            if rel_part.startswith("./") or not os.path.isabs(rel_part):
-                clean_rel = rel_part.lstrip("./")
-                db_file = (self.BASE_DIR / clean_rel).resolve()
-            else:
-                db_file = Path(rel_part).resolve()
+        # Database (SQLite lokal atau PostgreSQL/Supabase)
+        db_url_env = os.getenv("DATABASE_URL", "").strip()
+        if db_url_env.startswith(("postgresql://", "postgres://")):
+          if db_url_env.startswith("postgres://"):
+            db_url_env = db_url_env.replace("postgres://", "postgresql://", 1)
+          self.DATABASE_URL: str = db_url_env
+          self.DATABASE_PATH: Path = Path("supabase")  # placeholder, bukan file
+        elif db_url_env.startswith("sqlite:///"):
+          rel_part = db_url_env.replace("sqlite:///", "")
+          if rel_part.startswith("./") or not os.path.isabs(rel_part):
+            clean_rel = rel_part.lstrip("./")
+            db_file = (self.BASE_DIR / clean_rel).resolve()
+          else:
+            db_file = Path(rel_part).resolve()
             db_file.parent.mkdir(parents=True, exist_ok=True)
-            self.DATABASE_PATH: Path = db_file
-            self.DATABASE_URL: str = f"sqlite:///{db_file.as_posix()}"
+            self.DATABASE_PATH = db_file
+            self.DATABASE_URL = f"sqlite:///{db_file.as_posix()}"
         else:
-            default_db = (self.BASE_DIR / "storage" / "database" / "apiwaspada.db").resolve()
-            default_db.parent.mkdir(parents=True, exist_ok=True)
-            self.DATABASE_PATH = default_db
-            self.DATABASE_URL = f"sqlite:///{default_db.as_posix()}"
-
+          default_db = (self.BASE_DIR / "storage" / "database" / "apiwaspada.db").resolve()
+          default_db.parent.mkdir(parents=True, exist_ok=True)
+          self.DATABASE_PATH = default_db
+          self.DATABASE_URL = f"sqlite:///{default_db.as_posix()}"
+          
         # Direktori penyimpanan file
         upload_rel = os.getenv("UPLOAD_DIR", "storage/uploads")
         result_rel = os.getenv("RESULT_DIR", "storage/results")
