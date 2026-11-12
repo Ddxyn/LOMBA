@@ -43,3 +43,6 @@ htmlcov/
 .idea/
 Thumbs.db
 .DS_Store
+ml/weights/*.pt
+!ml/weights/best.pt
+!ml/weights/README.md
